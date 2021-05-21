@@ -1,25 +1,34 @@
 <?php
 
+namespace is\Masters\Modules\Isengine\Map;
 
+use is\Helpers\System;
+use is\Helpers\Objects;
+use is\Helpers\Strings;
+use is\Helpers\Prepare;
+
+$instance = $object -> get('instance');
+$sets = &$object -> settings;
 
 ?>
 
 <div
-	id="map_<?= $module -> param; ?>"
+	id="map_<?= $instance; ?>"
 	class="
-		<?= $module -> param; ?>
-		<?= (!empty($module -> settings['classes'])) ? $module -> settings['classes'] : ''; ?>
+		<?= $instance; ?>
+		<?= $sets['classes'] ? $sets['classes'] : null; ?>
 	"
-	<?php
-		if (
-			isset($module -> settings['sizes']) &&
-			is_array($module -> settings['sizes']) &&
-			count($module -> settings['sizes'])
-		) :
-	?>
+	<?php if (System::typeIterable($sets['sizes'])) { ?>
 	style="
-		<?= ($module -> settings['sizes'][0]) ? 'width: ' . $module -> settings['sizes'][0] . ';' : ''; ?>
-		<?= ($module -> settings['sizes'][1]) ? 'height: ' . $module -> settings['sizes'][1] . ';' : ''; ?>
+		<?= $sets['sizes'][0] ? 'width: ' . $sets['sizes'][0] . ';' : null; ?>
+		<?= $sets['sizes'][1] ? 'height: ' . $sets['sizes'][1] . ';' : null; ?>
 	"
-	<?php endif; ?>
+	<?php } elseif ($sets['width'] || $sets['height']) { ?>
+	style="
+		<?= $sets['width'] ? 'width: ' . $sets['width'] . ';' : null; ?>
+		<?= $sets['height'] ? 'height: ' . $sets['height'] . ';' : null; ?>
+	"
+	<?php } ?>
 ></div>
+
+<?php $object -> elements( $sets['service'] ); ?>
