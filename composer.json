@@ -17,7 +17,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"is\\Masters\\Modules\\Isengine\\": "/"
+			"is\\Masters\\Modules\\Isengine\\": "class/"
 		}
 	}
 }

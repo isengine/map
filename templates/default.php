@@ -31,4 +31,4 @@ $sets = &$object -> settings;
 	<?php } ?>
 ></div>
 
-<?php $object -> elements( $sets['service'] ); ?>
+<?php $object -> blocks( $sets['service'] ); ?>
