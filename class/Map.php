@@ -51,7 +51,7 @@ class Map extends Master {
 				}
 				
 				if (!empty($item['content'])) {
-					$item['content'] = $view -> get('process') -> launch( Prepare::clear($item['content']) );
+					$item['content'] = $view -> get('tvars') -> launch( Prepare::clear($item['content']) );
 				}
 				
 			}
