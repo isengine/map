@@ -10,8 +10,6 @@ use is\Helpers\Prepare;
 use is\Masters\Modules\Master;
 use is\Masters\View;
 
-use is\Components\Config;
-
 class Map extends Master {
 	
 	public function launch() {
@@ -67,11 +65,9 @@ class Map extends Master {
 		
 		// функция проверки изображения, формирования массива данных и возвращение его обратно
 		
-		$config = Config::getInstance();
-		
 		$image = (object) array(
 			'url' => '/' . $item,
-			'php' => $config -> get('path:site') . $item,
+			'php' => DI . $item,
 			'data' => '',
 			'type' => '',
 			'width' => '',
