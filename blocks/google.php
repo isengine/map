@@ -1,7 +1,7 @@
 <?php
 
-$sets = &$object -> settings;
-$instance = &$object -> instance;
+$sets = &$this -> settings;
+$instance = &$this -> instance;
 
 ?>
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=<?= $sets['key']; ?>"></script>

@@ -1,7 +1,7 @@
 <?php
 
-$sets = &$object -> settings;
-$instance = &$object -> instance;
+$sets = &$this -> settings;
+$instance = &$this -> instance;
 
 ?>
 

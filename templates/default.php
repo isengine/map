@@ -7,8 +7,8 @@ use is\Helpers\Objects;
 use is\Helpers\Strings;
 use is\Helpers\Prepare;
 
-$instance = $object -> get('instance');
-$sets = &$object -> settings;
+$instance = $this -> get('instance');
+$sets = &$this -> settings;
 
 ?>
 
@@ -31,4 +31,4 @@ $sets = &$object -> settings;
 	<?php } ?>
 ></div>
 
-<?php $object -> blocks( $sets['service'] ); ?>
+<?php $this -> block( $sets['service'] ); ?>
