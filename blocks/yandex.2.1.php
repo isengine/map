@@ -74,6 +74,9 @@ ymaps.ready(function() {
 	
 	' . ($position ? '
 	var selector = function(coords) {
+		is.Helpers.Sessions.setSession("' . $instance . ':coords", coords);
+		//let c = is.Helpers.Sessions.getSession("' . $instance . ':coords");
+		//console.log( c.split(",") );
 		' . ($selector['lat'] ? '$("' . $selector['lat'] . '").val(coords[0].toPrecision(8));' : null) . '
 		' . ($selector['lon'] ? '$("' . $selector['lon'] . '").val(coords[1].toPrecision(8));' : null) . '
 		' . ($selector['common'] ? '$("' . $selector['common'] . '").val(coords[0].toPrecision(8) + ":" + coords[1].toPrecision(8));' : null) . '
@@ -85,14 +88,29 @@ ymaps.ready(function() {
 		' : null) . '
 	}
 	
+	var selectorReverse = function() {
+		let coords = is.Helpers.Sessions.getSession("' . $instance . ':coords");
+		if (!coords) {
+			return null;
+		}
+		coords = coords.split(",");
+		coords[0] = parseFloat(coords[0]);
+		coords[1] = parseFloat(coords[1]);
+		return coords;
+	}
+	
 	geolocation.get({
 		provider: "yandex",
 		mapStateAutoApply: true,
 		autoReverseGeocode: true
 	}).then(function (result) {
+		let coords = selectorReverse();
+		if (coords) {
+			result.geoObjects.position = coords;
+		}
 		map.geoObjects.add(result.geoObjects);
 		um = new ymaps.Placemark(
-			result.geoObjects.position,
+			coords ? coords : result.geoObjects.position,
 			{},
 			' . json_encode($position) . '
 		);
