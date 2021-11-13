@@ -20,7 +20,7 @@ class Map extends Master {
 		$state = $view -> get('state|settings:webmaster');
 		
 		$sets = &$this -> settings;
-		
+		$position = &$this -> settings['position'];
 		//echo print_r($this -> settings, 1);
 		//echo print_r($sets, 1);
 		
@@ -45,7 +45,7 @@ class Map extends Master {
 				// устанавливаем для каждого параметры изображения, если оно есть
 				
 				if (!empty($item['image'])) {
-					$item['image'] = $this -> createMapMark($item['image']);
+					$item['image'] = $this -> createMapMark($item['image'], $item['offset']);
 				}
 				
 				if (!empty($item['content'])) {
@@ -56,23 +56,46 @@ class Map extends Master {
 			unset($item);
 			
 		} else {
-			$sets['marks'] = [[]];
+			$sets['marks'] = $position ? [] : [[]];
+		}
+		
+		// задаем настройки позиции нахождения пользователя на карте (с автоопределением)
+		
+		if ($position) {
+			if (!System::typeIterable($position)) {
+				$position = [];
+			}
+			if (!empty($position['image'])) {
+				$position['image'] = $this -> createMapMark($position['image'], $position['offset']);
+				// Смещение левого верхнего угла иконки относительно ее "ножки" (точки привязки)
+				//$position['iconImageOffset'] = [' . $sets['marks'][0]['offset'][0] . ', ' . $sets['marks'][0]['offset'][1] . ']
+				unset($position['preset'], $position['color']);
+			} else {
+				if (!$position['preset']) {
+					$position['preset'] = 'geolocationIcon';
+				}
+			}
 		}
 		
 	}
 	
-	public function createMapMark($item) {
+	public function createMapMark($item, $offset = null) {
 		
 		// функция проверки изображения, формирования массива данных и возвращение его обратно
 		
-		$image = (object) array(
+		$image = (object) [
 			'url' => '/' . $item,
 			'php' => DI . $item,
 			'data' => '',
 			'type' => '',
 			'width' => '',
-			'height' => ''
-		);
+			'height' => '',
+			'offset' => (object) [
+				// Смещение левого верхнего угла иконки относительно ее "ножки" (точки привязки)
+				'width' => $offset['width'],
+				'height' => $offset['height']
+			]
+		];
 		
 		if (
 			file_exists($image -> php) &&

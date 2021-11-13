@@ -14,38 +14,9 @@ $sets = &$this -> settings;
 $instance = Strings::after($this -> instance, ':', null, true);
 
 $position = $sets['position'];
-$selector = [];
-if ($position) {
-	if (!System::typeIterable($position)) {
-		$position = [];
-	}
-	if ($position['image']) {
-		$image = DI . $position['image'];
-		$position['iconLayout'] = 'default#image';
-		$position['iconImageHref'] = $position['image'];
-		$position['iconImageSize'] = [
-			'currVal.image.width', 'currVal.image.height'
-		];
-		// Смещение левого верхнего угла иконки относительно ее "ножки" (точки привязки)
-		//$position['iconImageOffset'] = [' . $sets['marks'][0]['offset'][0] . ', ' . $sets['marks'][0]['offset'][1] . ']
-		unset($position['image']);
-	} else {
-		if ($position['preset']) {
-			$position['preset'] = 'islands#' . $position['preset'];
-		} else {
-			$position['preset'] = 'islands#geolocationIcon';
-		}
-		if ($position['color']) {
-			$position['iconColor'] = $position['color'];
-			unset($position['color']);
-		}
-	}
-	if ($position['selector']) {
-		$selector = $position['selector'];
-		unset($position['selector']);
-	}
-	$position['draggable'] = true;
-}
+$name = $position && $position['name'] ? $position['name'] : $instance . ':coords';
+$selector = $position['selector'] ? $position['selector'] : [];
+unset($position['selector']);
 
 $view -> get('display') -> addBuffer('
 
@@ -53,12 +24,9 @@ $view -> get('display') -> addBuffer('
 <script>
 ymaps.ready(function() {
 	var
-		' . ($position ? 'um, geolocation = ymaps.geolocation,' : null) . '
 		map,
 		marks = ' . json_encode($sets['marks']) . ',
 		type = "' . (!empty($sets['type']) ? $sets['type'] : null) . '",
-		position = [' . $sets['coordinates'][0] . ', ' . $sets['coordinates'][1] . '],
-		controls = ' . (!empty($sets['controls']) ? json_encode($sets['controls']) : '["default"]') . ',
 		placemark;
 	
 	if (type === "roadmap" || type === "terrain" || type === "scheme" || !type) {
@@ -66,30 +34,35 @@ ymaps.ready(function() {
 	}
 	
 	map = new ymaps.Map("' . $instance . '", {
-		center: position,
+		center: ' . json_encode($sets['coordinates']) . ',
 		zoom: ' . $sets['zoom'] . ',
 		type: "yandex#" + type,
-		controls: controls
+		controls: ' . (!empty($sets['controls']) ? json_encode($sets['controls']) : '["default"]') . '
 	});
 	
 	' . ($position ? '
 	var selector = function(coords) {
-		is.Helpers.Sessions.setSession("' . $instance . ':coords", coords);
-		//let c = is.Helpers.Sessions.getSession("' . $instance . ':coords");
-		//console.log( c.split(",") );
+		is.Helpers.Sessions.setSession("' . $name . '", coords);
 		' . ($selector['lat'] ? '$("' . $selector['lat'] . '").val(coords[0].toPrecision(8));' : null) . '
 		' . ($selector['lon'] ? '$("' . $selector['lon'] . '").val(coords[1].toPrecision(8));' : null) . '
 		' . ($selector['common'] ? '$("' . $selector['common'] . '").val(coords[0].toPrecision(8) + ":" + coords[1].toPrecision(8));' : null) . '
-		' . ($selector['address'] ? '
+		' . ($selector['address'] || $selector['street'] ? '
 		ymaps.geocode(coords).then(function(res){
-			let geoname = res.geoObjects.get(0).getAddressLine();
-			$("' . $selector['address'] . '").val(geoname);
+			let geoname = res.geoObjects.get(0);
+			' . ($selector['street'] ? '$("' . $selector['street'] . '").html([
+				//geoname.getLocalities().length ? geoname.getLocalities() : geoname.getAdministrativeAreas(),
+				geoname.getLocalities(),
+				geoname.getThoroughfare(),
+				geoname.getPremise(),
+				geoname.getPremiseNumber()
+			].filter(Boolean).join(", "));' : null) . '
+			' . ($selector['address'] ? '$("' . $selector['address'] . '").val( geoname.getAddressLine() );' : null) . '
 		});
 		' : null) . '
 	}
 	
 	var selectorReverse = function() {
-		let coords = is.Helpers.Sessions.getSession("' . $instance . ':coords");
+		let coords = is.Helpers.Sessions.getSession("' . $name . '");
 		if (!coords) {
 			return null;
 		}
@@ -99,76 +72,106 @@ ymaps.ready(function() {
 		return coords;
 	}
 	
-	geolocation.get({
-		provider: "yandex",
-		mapStateAutoApply: true,
-		autoReverseGeocode: true
-	}).then(function (result) {
+	ymaps.geolocation.get().then(function (result) {
 		let coords = selectorReverse();
 		if (coords) {
 			result.geoObjects.position = coords;
+		} else {
+			coords = result.geoObjects.position;
 		}
-		map.geoObjects.add(result.geoObjects);
-		um = new ymaps.Placemark(
-			coords ? coords : result.geoObjects.position,
+		map.setCenter(coords);
+		
+		let v = ' . json_encode($position) . ';
+		if (v.image) {
+			v.image = {
+				iconLayout: "default#image",
+				iconImageHref: v.image.url,
+				iconImageSize: [v.image.width, v.image.height],
+				iconImageOffset: [v.image.offset.width, v.image.offset.height]
+			}
+		} else if (v.preset || v.color) {
+			v.image = {
+				preset: (v.preset) ? "islands#" + v.preset : undefined,
+				iconColor: (v.color) ? v.color : undefined
+			}
+		} else {
+			v.image = {};
+		}
+		if (v.draggable) {
+			v.image.draggable = v.draggable;
+		}
+		
+		let um = new ymaps.Placemark(
+			coords,
 			{},
-			' . json_encode($position) . '
+			v.image
 		);
-		um.events.add("dragend", function(e){
-			selector( e.get("target").geometry.getCoordinates() );
-		});
+		
+		if (v.draggable) {
+			um.events.add("dragend", function(e){
+				selector( e.get("target").geometry.getCoordinates() );
+			});
+		} else {
+			map.events.add("actiontick", function(e) {
+				let current_state = map.action.getCurrentState();
+				let geoCenter = map.options.get("projection").fromGlobalPixels(
+					current_state.globalPixelCenter,
+					current_state.zoom
+				);
+				um.geometry.setCoordinates(geoCenter);
+				selector(geoCenter);
+			});
+		}
+		
 		map.geoObjects.add(um);
-		selector(result.geoObjects.position);
+		selector(coords);
+		
 	});
 	
-	map.events.add("click", function(e) {
-		var coords = e.get("coords");
-		um.geometry.setCoordinates(coords);
-		selector(coords);
-	});
 	' : null) . '
 	
 	// new browser loader
-	marks.map(function(currVal){
+	marks.map(function(v){
 		
-		if (currVal.coordinates) {
-			currVal.coordinates = [currVal.coordinates[0], currVal.coordinates[1]];
+		console.log(v);
+		
+		if (v.coordinates) {
+			v.coordinates = [v.coordinates[0], v.coordinates[1]];
 		} else {
-			currVal.coordinates = map.getCenter();
+			v.coordinates = map.getCenter();
 		}
 		
-		if (currVal.image) {
-			currVal.image = {
+		if (v.image) {
+			v.image = {
 				iconLayout: "default#image",
-				iconImageHref: currVal.image.url,
-				iconImageSize: [currVal.image.width, currVal.image.height]
-				// Смещение левого верхнего угла иконки относительно ее "ножки" (точки привязки)
-				//iconImageOffset: [' . $sets['marks'][0]['offset'][0] . ', ' . $sets['marks'][0]['offset'][1] . ']
+				iconImageHref: v.image.url,
+				iconImageSize: [v.image.width, v.image.height],
+				iconImageOffset: [v.image.offset.width, v.image.offset.height]
 			}
-		} else if (currVal.preset || currVal.color) {
-			currVal.image = {
-				preset: (currVal.preset) ? "islands#" + currVal.preset : null,
-				iconColor: (currVal.color) ? currVal.color : null
+		} else if (v.preset || v.color) {
+			v.image = {
+				preset: (v.preset) ? "islands#" + v.preset : undefined,
+				iconColor: (v.color) ? v.color : undefined
 			}
 		} else {
-			currVal.image = null;
+			v.image = {};
 		}
 		
-		//console.log(currVal.image);
+		//console.log(v.image);
 		
 		placemark = new ymaps.Placemark(
-			currVal.coordinates,
+			v.coordinates,
 			{
-				iconCaption: (currVal.caption) ? currVal.caption : null,
-				hintContent: (currVal.hint) ? currVal.hint : null,
-				balloonContentHeader: (currVal.header) ? currVal.header : null,
-				balloonContentBody: (currVal.content) ? currVal.content : null,
-				balloonContentFooter: (currVal.footer) ? currVal.footer : null,
+				iconCaption: (v.caption) ? v.caption : null,
+				hintContent: (v.hint) ? v.hint : null,
+				balloonContentHeader: (v.header) ? v.header : null,
+				balloonContentBody: (v.content) ? v.content : null,
+				balloonContentFooter: (v.footer) ? v.footer : null,
 			},
-			currVal.image);
+			v.image);
 		map.geoObjects.add(placemark);
 		
-		if (currVal.autoopen) {
+		if (v.autoopen) {
 			placemark.balloon.open();
 		}
 		
