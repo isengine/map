@@ -12,6 +12,8 @@ use is\Masters\View;
 
 class Map extends Master {
 	
+	public $tvars;
+	
 	public function launch() {
 		
 		// если нет ключа, пробуем взять ключ из СЕО
@@ -20,6 +22,10 @@ class Map extends Master {
 		$state = $view -> get('state|settings:webmaster');
 		
 		$sets = &$this -> settings;
+		
+		$this -> tvars = $view -> get('tvars');
+		$sets = $this -> tvars($sets);
+		
 		$position = &$this -> settings['position'];
 		//echo print_r($this -> settings, 1);
 		//echo print_r($sets, 1);
@@ -77,6 +83,18 @@ class Map extends Master {
 			}
 		}
 		
+	}
+	
+	public function tvars($item) {
+		// вызывает обработку текстовых переменных для элемента
+		if (is_array($item)) {
+			$item = Objects::each($item, function($i){
+				return $this -> tvars($i);
+			});
+		} else {
+			$item = $this -> tvars -> launch($item);
+		}
+		return $item;
 	}
 	
 	public function createMapMark($item, $offset = null) {
