@@ -49,13 +49,16 @@ ymaps.ready(function() {
 		' . ($selector['address'] || $selector['street'] ? '
 		ymaps.geocode(coords).then(function(res){
 			let geoname = res.geoObjects.get(0);
-			' . ($selector['street'] ? '$("' . $selector['street'] . '").html([
+			' . ($selector['street'] ? 'let stnew = [
 				//geoname.getLocalities().length ? geoname.getLocalities() : geoname.getAdministrativeAreas(),
 				geoname.getLocalities(),
 				geoname.getThoroughfare(),
 				geoname.getPremise(),
 				geoname.getPremiseNumber()
-			].filter(Boolean).join(", "));' : null) . '
+			].filter(Boolean).join(", ");
+			if (stnew) {
+				$("' . $selector['street'] . '").html(stnew);
+			}' : null) . '
 			' . ($selector['address'] ? '$("' . $selector['address'] . '").val( geoname.getAddressLine() );' : null) . '
 		});
 		' : null) . '
