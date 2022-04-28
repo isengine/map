@@ -8,21 +8,6 @@ use is\Helpers\Strings;
 use is\Helpers\Prepare;
 
 $instance = Strings::after($this->instance, ':', null, true);
-$this->settings = Objects::merge(
-    [
-        'classes' => null,
-        'width' => null,
-        'height' => null,
-        'service' => null,
-        'api' => null,
-        'type' => null,
-        'zoom' => null,
-        'coordinates' => null,
-        'position' => null,
-        'controls' => null
-    ],
-    $this->settings
-);
 $sets = $this->settings;
 
 ?>

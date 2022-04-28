@@ -20,18 +20,7 @@ class Map extends Master
         $view = View::getInstance();
         $state = $view->get('state|settings:webmaster');
 
-        $sets = Objects::merge(
-            [
-                'position' => null,
-                'service' => null,
-                'key' => null,
-                'marks' => null,
-                '' => null,
-                '' => null,
-                '' => null
-            ],
-            $this->settings
-        );
+        $sets = $this->settings;
 
         $this->tvars = $view->get('tvars');
         $sets = $this->tvars($sets);

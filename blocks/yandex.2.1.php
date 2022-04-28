@@ -13,17 +13,8 @@ $sets = $this->settings;
 $instance = Strings::after($this->instance, ':', null, true);
 
 $position = $sets['position'];
-$name = $position && !empty($position['name']) ? $position['name'] : $instance . ':coords';
-$selector = Objects::merge(
-    [
-        'lat' => null,
-        'lon' => null,
-        'common' => null,
-        'address' => null,
-        'street' => null
-    ],
-    !empty($position['selector']) ? $position['selector'] : []
-);
+$name = $position && $position['name'] ? $position['name'] : $instance . ':coords';
+$selector = $position['selector'];
 unset($position['selector']);
 
 $view->get('display')->addBuffer('
@@ -36,18 +27,18 @@ ymaps.ready(function() {
         marks = ' . (!empty($sets['marks']) ? json_encode($sets['marks']) : null) . ',
         type = "' . (!empty($sets['type']) ? $sets['type'] : null) . '",
         placemark;
-    
+
     if (type === "roadmap" || type === "terrain" || type === "scheme" || !type) {
         type = "map";
     }
-    
+
     map = new ymaps.Map("' . $instance . '", {
         center: ' . json_encode($sets['coordinates']) . ',
         zoom: ' . $sets['zoom'] . ',
         type: "yandex#" + type,
         controls: ' . (!empty($sets['controls']) ? json_encode($sets['controls']) : '["default"]') . '
     });
-    
+
     ' . ($position ? '
     var selector = function(coords) {
         is.Helpers.Sessions.setSession("' . $name . '", coords);
@@ -71,7 +62,7 @@ ymaps.ready(function() {
         });
         ' : null) . '
     }
-    
+
     var selectorReverse = function() {
         let coords = is.Helpers.Sessions.getSession("' . $name . '");
         if (!coords) {
@@ -82,7 +73,7 @@ ymaps.ready(function() {
         coords[1] = parseFloat(coords[1]);
         return coords;
     }
-    
+
     ymaps.geolocation.get().then(function (result)
     {
         let coords = selectorReverse();
@@ -92,7 +83,7 @@ ymaps.ready(function() {
             coords = result.geoObjects.position;
         }
         map.setCenter(coords);
-        
+
         let v = ' . json_encode($position) . ';
         if (v.image) {
             v.image = {
@@ -112,13 +103,13 @@ ymaps.ready(function() {
         if (v.draggable) {
             v.image.draggable = v.draggable;
         }
-        
+
         let um = new ymaps.Placemark(
             coords,
             {},
             v.image
         );
-        
+
         if (v.draggable) {
             um.events.add("dragend", function(e){
                 selector( e.get("target").geometry.getCoordinates() );
@@ -134,23 +125,23 @@ ymaps.ready(function() {
                 selector(geoCenter);
             });
         }
-        
+
         map.geoObjects.add(um);
         selector(coords);
     });
-    
+
     ' : null) . '
-    
+
     // new browser loader
     marks.map(function(v){
         console.log(v);
-        
+
         if (v.coordinates) {
             v.coordinates = [v.coordinates[0], v.coordinates[1]];
         } else {
             v.coordinates = map.getCenter();
         }
-        
+
         if (v.image) {
             v.image = {
                 iconLayout: "default#image",
@@ -166,9 +157,9 @@ ymaps.ready(function() {
         } else {
             v.image = {};
         }
-        
+
         //console.log(v.image);
-        
+
         placemark = new ymaps.Placemark(
             v.coordinates,
             {
@@ -180,14 +171,14 @@ ymaps.ready(function() {
             },
             v.image);
         map.geoObjects.add(placemark);
-        
+
         if (v.autoopen) {
             placemark.balloon.open();
         }
     });
-    
+
     setupScrollZoom(map);
-    
+
     function setupScrollZoom(map)
     {
         var mapHoverTimer;
