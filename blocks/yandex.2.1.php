@@ -24,8 +24,8 @@ $view->get('display')->addBuffer('
 ymaps.ready(function() {
     var
         map,
-        marks = ' . (!empty($sets['marks']) ? json_encode($sets['marks']) : null) . ',
-        type = "' . (!empty($sets['type']) ? $sets['type'] : null) . '",
+        marks = ' . (!empty($sets['marks']) ? json_encode($sets['marks']) : '{}') . ',
+        type = "' . (!empty($sets['type']) ? $sets['type'] : '') . '",
         placemark;
 
     if (type === "roadmap" || type === "terrain" || type === "scheme" || !type) {
