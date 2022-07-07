@@ -14,7 +14,7 @@ $instance = Strings::after($this->instance, ':', null, true);
 
 $position = $sets['position'];
 $name = $position && $position['name'] ? $position['name'] : $instance . ':coords';
-$selector = $position['selector'];
+$selector = isset($position['selector']) ? $position['selector'] : [];
 unset($position['selector']);
 
 $view->get('display')->addBuffer('
